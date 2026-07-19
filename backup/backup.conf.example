@@ -1,0 +1,21 @@
+# 複製成 backup.conf 後填入實際值：cp backup.conf.example backup.conf
+# backup.conf 含 NAS 連線資訊，已被 .gitignore 排除。
+
+# ===== 本機備份 =====
+# 備份檔存放目錄（相對於專案根目錄，或填絕對路徑）
+LOCAL_BACKUP_DIR="backups"
+# 本機備份保留天數，超過自動刪除
+RETENTION_DAYS=30
+
+# ===== Synology NAS 上傳（rsync over SSH）=====
+# 開關：true = 備份完自動上傳到 NAS；false = 只留本機（隨時可改，下次執行生效）
+BACKUP_TO_NAS=true
+
+NAS_HOST="192.168.1.10"      # NAS 的 IP 或主機名稱
+NAS_USER="vwbackup"          # NAS 上的備份專用帳號
+NAS_SSH_PORT=22              # DSM 的 SSH port（控制台 > 終端機那頁看）
+NAS_DEST_DIR="/volume1/backup/vaultwarden"  # NAS 上的目的地資料夾（絕對路徑）
+SSH_KEY="$HOME/.ssh/id_ed25519"             # 免密碼登入用的私鑰
+
+# NAS 端保留天數（0 = 不清理，NAS 上的舊備份自己管理）
+NAS_RETENTION_DAYS=90

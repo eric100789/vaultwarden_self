@@ -1,0 +1,45 @@
+services:
+  vaultwarden:
+    image: vaultwarden/server:latest
+    container_name: vaultwarden
+    restart: unless-stopped
+    environment:
+      DOMAIN: "${DOMAIN}"
+      TZ: "${TZ:-Asia/Taipei}"
+
+      # 註冊 / 邀請控制
+      SIGNUPS_ALLOWED: "${SIGNUPS_ALLOWED:-false}"
+      INVITATIONS_ALLOWED: "${INVITATIONS_ALLOWED:-true}"
+      SIGNUPS_VERIFY: "${SIGNUPS_VERIFY:-true}"
+
+      # admin 後台（值必須是 argon2 雜湊，見 SETUP.md）
+      ADMIN_TOKEN: "${ADMIN_TOKEN}"
+
+      # SMTP（Gmail）
+      SMTP_HOST: "${SMTP_HOST:-smtp.gmail.com}"
+      SMTP_PORT: "${SMTP_PORT:-587}"
+      SMTP_SECURITY: "${SMTP_SECURITY:-starttls}"
+      SMTP_USERNAME: "${SMTP_USERNAME}"
+      SMTP_PASSWORD: "${SMTP_PASSWORD}"
+      SMTP_FROM: "${SMTP_FROM}"
+      SMTP_FROM_NAME: "${SMTP_FROM_NAME:-Vaultwarden}"
+    volumes:
+      - ./vw-data:/data
+    ports:
+      # 只綁 localhost，僅供伺服器本機除錯；對外流量全部走 Cloudflare Tunnel。
+      # port 在 .env 的 VW_PORT 設定，跟其他服務打架就換一個數字。
+      - "127.0.0.1:${VW_PORT:-8200}:80"
+    healthcheck:
+      test: ["CMD", "/healthcheck.sh"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: vaultwarden-cloudflared
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token ${TUNNEL_TOKEN}
+    depends_on:
+      vaultwarden:
+        condition: service_healthy

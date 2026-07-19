@@ -1,0 +1,8 @@
+# 機密與實際設定
+.env
+backup/backup.conf
+
+# 執行期資料與備份產物
+vw-data/
+backups/
+*.log
