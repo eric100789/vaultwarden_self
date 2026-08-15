@@ -63,6 +63,11 @@ services:
       # 掛整個專案目錄，讓 backup.sh 裡「相對於腳本所在位置」的路徑邏輯
       # （backup.conf、vw-data/、backups/）不用特別改就能在容器裡直接跑。
       - .:/project
+      # backup/backup.conf 的 LOCAL_BACKUP_DIR 如果填的是「絕對路徑」（例如掛
+      # 在 host 上的 NAS 目錄），必須在這裡額外掛同一個絕對路徑進來，容器內
+      # 才寫得到 host 那個位置；否則容器會自己在內部建一份寫入，host 端看不到。
+      # 路徑要跟 backup.conf 裡的值完全一致，改了 conf 記得這裡也要跟著改。
+      - /mnt/nas_backup:/mnt/nas_backup
       - /var/run/docker.sock:/var/run/docker.sock
     working_dir: /project
     entrypoint: ["/bin/sh", "/project/backup/backup-loop.sh"]
