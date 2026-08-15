@@ -153,15 +153,17 @@ chmod +x backup/backup.sh backup/restore.sh
 # 確認：backups/ 出現 vaultwarden-*.tar.gz，NAS 目的資料夾也出現同名檔案
 ```
 
-### 7.3 排程（每天 03:00）
+### 7.3 排程（docker 自動跑，不用 cron）
 
-```bash
-crontab -e
-# 加入這行（路徑照你的實際位置改）：
-0 3 * * * /opt/vaultwarden/backup/backup.sh >> /opt/vaultwarden/backup/cron.log 2>&1
-```
+`docker-compose.yml` 裡的 `backup` 服務會在 `docker compose up -d` 時立刻備份一次，之後每隔 `.env` 的 `BACKUP_INTERVAL_SECONDS` 秒（預設 86400 = 每天一次）再備份一次，不需要另外設 crontab。
 
-備份內容：資料庫（SQLite 線上備份，免停機）、附件、Send、RSA 金鑰、config.json。log 在 `backup/backup.log`。
+- 看它做了什麼：`docker compose logs -f backup`
+- 想改備份頻率：改 `.env` 的 `BACKUP_INTERVAL_SECONDS`，再 `docker compose up -d backup`
+- 想暫時關掉：`docker compose stop backup`
+
+備份內容：資料庫（SQLite 線上備份，免停機）、附件、Send、RSA 金鑰、config.json。log 在 `backup/backup.log`（保留天數是另一個設定，見 `backup/backup.conf` 的 `RETENTION_DAYS`，跟這裡的頻率無關）。
+
+> 若不想用 docker 這個服務，也可以把它從 `docker-compose.yml` 拿掉，改用傳統 cron：`crontab -e` 加一行 `0 3 * * * /opt/vaultwarden/backup/backup.sh >> /opt/vaultwarden/backup/cron.log 2>&1`。
 
 ## 8. 還原（請至少演練一次！）
 
@@ -187,7 +189,9 @@ crontab -e
 
 - 看它做了什麼：`docker compose logs -f watchtower`
 - 想暫時關掉自動更新：把 `docker-compose.yml` 裡 `vaultwarden` / `cloudflared` 底下的 `labels: com.centurylinklabs.watchtower.enable=true` 拿掉（或整個 `watchtower` 服務註解掉），再 `docker compose up -d`
-- 因為是自動更新資料庫會跟著版本走，**強烈建議保留第 7 節的每日排程備份**，萬一新版有問題可以用 `restore.sh` 退回舊版
+- 因為是自動更新資料庫會跟著版本走，**強烈建議保留第 7 節的自動備份**，萬一新版有問題可以用 `restore.sh` 退回舊版
+
+**自動備份（backup）**：同樣在 `docker compose up -d` 時多跑一個 `backup` 容器，啟動時立刻備份一次，之後每隔 `.env` 的 `BACKUP_INTERVAL_SECONDS` 秒再備份一次（預設每天）；輪替刪除超過 `backup/backup.conf` 裡 `RETENTION_DAYS` 天的舊備份邏輯不變。看它做了什麼：`docker compose logs -f backup`。
 
 **手動更新**（若沒開自動更新，或想立刻更新不等排程）：
 
