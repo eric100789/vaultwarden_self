@@ -34,6 +34,9 @@ services:
       interval: 60s
       timeout: 10s
       retries: 3
+    labels:
+      # 讓 watchtower 監控這個容器（見下方 watchtower 服務）
+      - "com.centurylinklabs.watchtower.enable=true"
 
   cloudflared:
     image: cloudflare/cloudflared:latest
@@ -43,3 +46,26 @@ services:
     depends_on:
       vaultwarden:
         condition: service_healthy
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+
+  # 自動更新：compose up 時立刻檢查一次，之後每隔 WATCHTOWER_POLL_INTERVAL 秒
+  # 再檢查一次；只要上面兩個容器有新版 image 就自動 pull + 重建，並清掉舊 image。
+  # 只會動有標 com.centurylinklabs.watchtower.enable=true 的容器（--label-enable），
+  # 不會連 watchtower 自己一起更新。
+  watchtower:
+    # 原版 containrrr/watchtower 已停止維護，內建 docker client 太舊，跟較新版
+    # Docker Engine（要求 API >= 1.44）不相容，會一直噴 "client version 1.25 is
+    # too old" 然後 restart loop。改用社群持續維護的 fork：nickfedor/watchtower。
+    image: nickfedor/watchtower:latest
+    container_name: vaultwarden-watchtower
+    restart: unless-stopped
+    environment:
+      TZ: "${TZ:-Asia/Taipei}"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command:
+      - --label-enable
+      - --cleanup
+      - --interval
+      - "${WATCHTOWER_POLL_INTERVAL:-86400}"

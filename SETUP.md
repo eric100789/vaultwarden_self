@@ -183,7 +183,13 @@ crontab -e
 
 ## 9. 日常維護
 
-**更新 Vaultwarden**（建議每一兩個月）：
+**自動更新（watchtower）**：`docker compose up -d` 之後會多跑一個 `watchtower` 容器，專門監控 `vaultwarden` 和 `cloudflared` 這兩個容器（其他容器沒標籤不會被動到）。它會在啟動時立刻檢查一次，之後每隔 `.env` 的 `WATCHTOWER_POLL_INTERVAL` 秒（預設 86400 秒 = 1 天）再檢查一次，有新版 image 就自動 pull + 重建容器，並清掉舊 image。
+
+- 看它做了什麼：`docker compose logs -f watchtower`
+- 想暫時關掉自動更新：把 `docker-compose.yml` 裡 `vaultwarden` / `cloudflared` 底下的 `labels: com.centurylinklabs.watchtower.enable=true` 拿掉（或整個 `watchtower` 服務註解掉），再 `docker compose up -d`
+- 因為是自動更新資料庫會跟著版本走，**強烈建議保留第 7 節的每日排程備份**，萬一新版有問題可以用 `restore.sh` 退回舊版
+
+**手動更新**（若沒開自動更新，或想立刻更新不等排程）：
 
 ```bash
 cd /opt/vaultwarden

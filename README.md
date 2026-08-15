@@ -1,13 +1,13 @@
 # Vaultwarden Self-Hosted
 
-自架 Vaultwarden 密碼管理伺服器：Docker Compose + Cloudflare Tunnel（免開 port）+ Gmail SMTP + 本機/Synology NAS 備份。
+自架 Vaultwarden 密碼管理伺服器：Docker Compose + Cloudflare Tunnel（免開 port）+ Gmail SMTP + 本機/Synology NAS 備份 + Watchtower 自動更新。
 
 **完整安裝與維運指南：[SETUP.md](SETUP.md)**
 
 ## 檔案結構
 
 ```
-docker-compose.yml           # vaultwarden + cloudflared
+docker-compose.yml           # vaultwarden + cloudflared + watchtower（自動更新）
 .env.example                 # 環境變數範本（複製成 .env 填入機密）
 backup/backup.sh             # 備份：免停機 DB 備份 → 打包 → 輪替 → (可開關) rsync 到 NAS
 backup/restore.sh            # 還原：從備份檔一鍵還原
